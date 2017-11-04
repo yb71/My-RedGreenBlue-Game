@@ -5,6 +5,9 @@ import time
 import csv
 # from tkinter.ttk import Frame, Label, Style, Button
 
+WAIT_TIME = 30000
+NUM_OF_BALLS = 100
+BALL_SIZE = 10
 
 class Direction(Enum):
     UP = 1; DOWN = 2; LEFT = 3; RIGHT = 4
@@ -69,10 +72,15 @@ class Ball:
         else:
             x1, y1, x2, y2 = canvas.coords(self.ball)
 
-        overlapping_balls = canvas.find_overlapping(x1, y1, x2, y2)  # canvas detects overlapping
-        if len(overlapping_balls) > 1 and counter >= 5000:  # half a minute
+        overlapping_balls = canvas.find_overlapping(x1, y1, x2, y2)  # canvas detected overlapping
+        # print(overlapping_balls)  # tuple of item ids
+        # overlapping_balls = canvas.find(overlapping_balls[0])
+        # print(overlapping_balls)
+
+        if len(overlapping_balls) > 1 and counter >= WAIT_TIME:  # half a minute
             canvas.delete(self.ball)
-        elif len(overlapping_balls) > 1 and counter < 5000:
+
+        elif len(overlapping_balls) > 1 and counter < WAIT_TIME:
             if self.direction == Direction.DOWN:
                 self.direction = Direction.UP
             elif self.direction == Direction.UP:
@@ -104,23 +112,30 @@ def update_clock():
 
 
 def count_survivors():
-    all_balls = canvas.find_all()
-    total_ball_count = len(all_balls)
+    global run_data
     now = time.strftime('%b%d_%Y_%H:%M:%S')
     time_now = time.strftime('%H:%M:%S')
 
-    data["time"] = time_now
-    data["total count"] = total_ball_count
-    data["red"] = len(canvas.find_withtag("red"))
-    data["green"] = len(canvas.find_withtag("green"))
-    data["blue"] = len(canvas.find_withtag("blue"))
+    all_balls = canvas.find_all()
+    total_ball_count = len(all_balls)
+
+    team_red = len(canvas.find_withtag("red"))
+    team_green = len(canvas.find_withtag("green"))
+    team_blue = len(canvas.find_withtag("blue"))
+
+    data = {"time": time_now, "total count": total_ball_count, "red": team_red, "green": team_green, "blue": team_blue}
+    # print(data)
     run_data.append(data)
 
-    if len(all_balls) == 10:
+    if (team_red != 0 and team_blue == 0 and team_green == 0) \
+            or (team_red == 0 and team_blue != 0 and team_green == 0) \
+            or (team_red == 0 and team_blue == 0 and team_green != 0):
         file_name = 'data/' + now + '.csv'
         with open(file_name, "w") as csvfile:
-            w = csv.writer(csvfile, delimiter=' ')
-            w.writerow(str(run_data))
+            writer = csv.writer(csvfile, delimiter=',')
+            for d in run_data:
+                line = d["time"], d["total count"], d["red"], d["green"], d["blue"]
+                writer.writerow(line)
         exit()
     root.after(1000, count_survivors)
 
@@ -139,12 +154,11 @@ START_TIME = time.time()
 update_clock()
 
 counter = 0
-for i in range(50):
-    b = Ball(canvas, size=10)
+for i in range(NUM_OF_BALLS):
+    b = Ball(canvas, size=BALL_SIZE)
     b.move_ball()
 
 run_data = []
-data = {"time": '', "total count": 0, "red": 0, "green": 0, "blue": 0}
 count_survivors()
 
 root.mainloop()
