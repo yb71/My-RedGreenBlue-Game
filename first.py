@@ -2,6 +2,7 @@ from tkinter import *
 from random import randint
 from enum import Enum
 import time
+import csv
 # from tkinter.ttk import Frame, Label, Style, Button
 
 
@@ -14,22 +15,21 @@ class Ball:
         self.ball_size = size
         self.canvas = canvas
 
-        color = randint(1, 3)
-        if color == 1:
-            fill = "blue"
-        elif color == 2:
-            fill = "red"
-        elif color == 3:
-            fill = "green"
-        else:
-            fill = "gray"
-
         # randomize the starting point
         self.x1 = randint(50, 450)
         self.y1 = randint(50, 450)
         self.x2 = self.x1 + self.ball_size
         self.y2 = self.y1 + self.ball_size
-        self.ball = canvas.create_oval(self.x1, self.y1, self.x2, self.y2, fill=fill)
+
+        color = randint(1, 3)
+        if color == 1:
+            self.ball = canvas.create_oval(self.x1, self.y1, self.x2, self.y2, fill="blue", tags="blue")
+        elif color == 2:
+            self.ball = canvas.create_oval(self.x1, self.y1, self.x2, self.y2, fill="red", tags="red")
+        elif color == 3:
+            self.ball = canvas.create_oval(self.x1, self.y1, self.x2, self.y2, fill="green", tags="green")
+        else:
+            self.ball = canvas.create_oval(self.x1, self.y1, self.x2, self.y2, fill="gray", tags="gray")
 
         n = randint(1, 4)
         if n == 1:
@@ -61,7 +61,7 @@ class Ball:
         else: # Direction.RIGHT
             delta_y = d * delta_y  # randomize y direction
 
-        self.canvas.move(self.ball, delta_x, delta_y)  # -------------------------- move the ball
+        self.canvas.move(self.ball, delta_x, delta_y)  # <<-------------------------- move the ball
         self.canvas.after(40, self.move_ball)
 
         if len(canvas.coords(self.ball)) == 0:
@@ -70,9 +70,9 @@ class Ball:
             x1, y1, x2, y2 = canvas.coords(self.ball)
 
         overlapping_balls = canvas.find_overlapping(x1, y1, x2, y2)  # canvas detects overlapping
-        if len(overlapping_balls) > 1 and counter >= 30000:  # half a minute
+        if len(overlapping_balls) > 1 and counter >= 5000:  # half a minute
             canvas.delete(self.ball)
-        elif len(overlapping_balls) > 1 and counter < 30000:
+        elif len(overlapping_balls) > 1 and counter < 5000:
             if self.direction == Direction.DOWN:
                 self.direction = Direction.UP
             elif self.direction == Direction.UP:
@@ -105,13 +105,27 @@ def update_clock():
 
 def count_survivors():
     all_balls = canvas.find_all()
-    print(all_balls)
-    if len(all_balls) == 1:
+    total_ball_count = len(all_balls)
+    now = time.strftime('%b%d_%Y_%H:%M:%S')
+    time_now = time.strftime('%H:%M:%S')
+
+    data["time"] = time_now
+    data["total count"] = total_ball_count
+    data["red"] = len(canvas.find_withtag("red"))
+    data["green"] = len(canvas.find_withtag("green"))
+    data["blue"] = len(canvas.find_withtag("blue"))
+    run_data.append(data)
+
+    if len(all_balls) == 10:
+        file_name = 'data/' + now + '.csv'
+        with open(file_name, "w") as csvfile:
+            w = csv.writer(csvfile, delimiter=' ')
+            w.writerow(str(run_data))
         exit()
     root.after(1000, count_survivors)
 
 
-# ===========================================================================
+# Main script ===========================================================================
 root = Tk()
 root.title('Red-Green-Blue')
 root.configure(background="gray")
@@ -129,7 +143,8 @@ for i in range(50):
     b = Ball(canvas, size=10)
     b.move_ball()
 
-
+run_data = []
+data = {"time": '', "total count": 0, "red": 0, "green": 0, "blue": 0}
 count_survivors()
 
 root.mainloop()
