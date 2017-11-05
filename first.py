@@ -9,6 +9,7 @@ WAIT_TIME = 30000
 NUM_OF_BALLS = 100
 BALL_SIZE = 10
 
+
 class Direction(Enum):
     UP = 1; DOWN = 2; LEFT = 3; RIGHT = 4
 
@@ -25,6 +26,7 @@ class Ball:
         self.y2 = self.y1 + self.ball_size
 
         color = randint(1, 3)
+        # self.ball => item id
         if color == 1:
             self.ball = canvas.create_oval(self.x1, self.y1, self.x2, self.y2, fill="blue", tags="blue")
         elif color == 2:
@@ -54,15 +56,15 @@ class Ball:
             d = -1
 
         if self.direction == Direction.DOWN:
-            delta_x = d * delta_x  # randomize x direction
+            delta_x = d * delta_x  # randomize only x direction
         elif self.direction == Direction.UP:
-            delta_x = d * delta_x  # randomize x direction
+            delta_x = d * delta_x  # randomize only x direction
             delta_y = -delta_y
         elif self.direction == Direction.LEFT:
-            delta_y = d * delta_y  # randomize y direction
+            delta_y = d * delta_y  # randomize only y direction
             delta_x = -delta_x
         else: # Direction.RIGHT
-            delta_y = d * delta_y  # randomize y direction
+            delta_y = d * delta_y  # randomize only y direction
 
         self.canvas.move(self.ball, delta_x, delta_y)  # <<-------------------------- move the ball
         self.canvas.after(40, self.move_ball)
@@ -73,24 +75,23 @@ class Ball:
             x1, y1, x2, y2 = canvas.coords(self.ball)
 
         overlapping_balls = canvas.find_overlapping(x1, y1, x2, y2)  # canvas detected overlapping
-        # print(overlapping_balls)  # tuple of item ids
-        # overlapping_balls = canvas.find(overlapping_balls[0])
-        # print(overlapping_balls)
 
-        if len(overlapping_balls) > 1 and counter >= WAIT_TIME:  # half a minute
-            canvas.delete(self.ball)
+        if len(overlapping_balls) > 1 and counter >= WAIT_TIME:  # start removing balls
+            my_tags = canvas.itemcget(self.ball, "tags") # delete only if no other balls with same tag
+            shouldDelete = True
+            for ob in overlapping_balls:
+                # if any other ball with same tag, then just bounce, otherwise delete this ball
+                if canvas.itemcget(ob, "tags") == my_tags and ob != self.ball:
+                    self.direction = bounce_off(self.direction)
+                    shouldDelete = False
+                    break
+            if shouldDelete:  # delete this ball
+                canvas.delete(self.ball)
 
-        elif len(overlapping_balls) > 1 and counter < WAIT_TIME:
-            if self.direction == Direction.DOWN:
-                self.direction = Direction.UP
-            elif self.direction == Direction.UP:
-                self.direction = Direction.DOWN
-            elif self.direction == Direction.LEFT:
-                self.direction = Direction.RIGHT
-            elif self.direction == Direction.RIGHT:
-                    self.direction = Direction.LEFT
+        elif len(overlapping_balls) > 1 and counter < WAIT_TIME:  # only bounce from other balls
+            self.direction = bounce_off(self.direction)
 
-        # if hit the canvas walls
+        # bounce off the canvas walls
         if x1 <= 0:
             self.direction = Direction.RIGHT
         elif y1 <= 0:
@@ -99,6 +100,20 @@ class Ball:
             self.direction = Direction.LEFT
         elif y2 >= 500:
             self.direction = Direction.UP
+
+
+def bounce_off(start_direction):
+    if start_direction == Direction.DOWN:
+        end_direction = Direction.UP
+    elif start_direction == Direction.UP:
+        end_direction = Direction.DOWN
+    elif start_direction == Direction.LEFT:
+        end_direction = Direction.RIGHT
+    elif start_direction == Direction.RIGHT:
+        end_direction = Direction.LEFT
+    else:
+        end_direction = start_direction
+    return end_direction
 
 
 def update_clock():
