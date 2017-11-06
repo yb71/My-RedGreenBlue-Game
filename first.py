@@ -4,10 +4,14 @@ from enum import Enum
 import time
 import csv
 
-WAIT_TIME = 30000
+WAIT_TIME = 30000  # milliseconds
 NUM_OF_BALLS = 100
 BALL_SIZE = 10
 START_TIME = time.time()
+now = time.strftime('%b%d_%Y_%H:%M:%S')
+output_file_name = 'data/' + now + '.csv'
+run_data = []
+ball_objects = {}
 
 
 class Direction(Enum):
@@ -15,19 +19,18 @@ class Direction(Enum):
 
 
 class Ball:
-    def __init__(self, canvas, size):
+    def __init__(self, canvas, ball_objects, size):
         self.ball_size = size
-        self.points = 10
+        self.points = 0
         self.canvas = canvas
 
-        # randomize the starting point
+        # randomize the starting point on  the canvas
         self.x1 = randint(50, 450)
         self.y1 = randint(50, 450)
         self.x2 = self.x1 + self.ball_size
         self.y2 = self.y1 + self.ball_size
-
+        # randomize ball color
         color = randint(1, 3)
-        # self.ball => item id
         if color == 1:
             self.ball = canvas.create_oval(self.x1, self.y1, self.x2, self.y2, fill="blue", tags="blue")
         elif color == 2:
@@ -37,14 +40,17 @@ class Ball:
         else:
             self.ball = canvas.create_oval(self.x1, self.y1, self.x2, self.y2, fill="gray", tags="gray")
 
-        n = randint(1, 4)
-        if n == 1:
+        ball_objects[self.ball] = self  # self.ball is an item id (integer)
+
+        # randomize ball direction
+        direct = randint(1, 4)
+        if direct == 1:
             self.direction = Direction.UP
-        elif n == 2:
+        elif direct == 2:
             self.direction = Direction.DOWN
-        elif n == 3:
+        elif direct == 3:
             self.direction = Direction.LEFT
-        elif n == 4:
+        elif direct == 4:
             self.direction = Direction.RIGHT
 
     def move_ball(self):
@@ -76,30 +82,48 @@ class Ball:
         overlapping_balls = canvas.find_overlapping(x1, y1, x2, y2)  # canvas detected overlapping
 
         time_diff = int((time.time() - START_TIME)*1000)  # milliseconds
+        my_tag = canvas.itemcget(self.ball, "tags")
+
+        # ------------------------- COLLISION DETECTED -------------------------------------------
+
         if len(overlapping_balls) > 1 and time_diff >= WAIT_TIME:  # start removing balls
-            my_tag = canvas.itemcget(self.ball, "tags")
             should_delete = True
 
-            #--------------------------------------------------------------------
-            overlap_colors = []
-            for c in overlapping_balls:
-                overlap_colors.append(canvas.itemcget(c, "tags"))
-            print((self.ball, my_tag), list(zip(overlapping_balls, overlap_colors)))
-            #---------------------------------------------------------------------
+            # --------- test output
+            # overlap_colors = []
+            # for c in overlapping_balls:
+            #     overlap_colors.append(canvas.itemcget(c, "tags"))
+            # print((self.ball, my_tag, self.points), list(zip(overlapping_balls, overlap_colors)))
+            # --------- end of test output
 
+            # count points
             for ob in overlapping_balls:
-                # if any other ball with same tag, then just bounce, otherwise delete this ball
-                if canvas.itemcget(ob, "tags") == my_tag and ob != self.ball:
-                    self.direction = bounce_off(self.direction)
+                if ob == self.ball:
+                    continue
+                # for any other ball with same color tag, add points
+                if canvas.itemcget(ob, "tags") == my_tag:
                     self.points += 1
-                    should_delete = False
-                    print("not")
                     break
-            if should_delete:  # delete this ball
-                print("deleting")
-                canvas.delete(self.ball)
+                # for any other ball with different color tag, remove points
+                else:
+                    self.points -= 1
 
-        elif len(overlapping_balls) > 1 and time_diff < WAIT_TIME:  # only bounce from other balls
+            # if no points lef, delete this ball
+            if self.points <= 0:
+                # print("deleting")
+                canvas.delete(self.ball)
+            # if some points left, just bounce
+            else:
+                self.direction = bounce_off(self.direction)
+
+        elif len(overlapping_balls) > 1 and time_diff < WAIT_TIME:  # only bounce
+            for ob in overlapping_balls:
+                if ob == self.ball:
+                    continue
+                # for any other ball with same color tag, add points
+                if canvas.itemcget(ob, "tags") == my_tag:
+                    self.points += 1
+                    break
             self.direction = bounce_off(self.direction)
 
         # bounce off the canvas walls
@@ -127,53 +151,71 @@ def bounce_off(start_direction):
     return end_direction
 
 
-def update_label():
-
-    root.after(1000, update_label)
-
-
-# def update_clock():
-#     start_time = START_TIME
-#     diff = int(time.time() - start_time)
-#     m, s = divmod(diff, 60)
-#     h, m = divmod(m, 60)
-#     now = "%d:%02d:%02d" % (h, m, s)
-#     label.configure(text=now)
-#     root.after(1000, update_clock)
+def update_time_label():
+    secs = int(time.time() - START_TIME)  # seconds
+    mins, secs = divmod(secs, 60)
+    hrs, mins = divmod(mins, 60)
+    label_text = '{} : {} : {}'.format(hrs, mins, secs)
+    label.configure(text=label_text)
+    root.after(1000, update_time_label)
 
 
-def count_survivors(t, run_data):
-    now = time.strftime('%b%d_%Y_%H:%M:%S')
-    # time_now = time.strftime('%H:%M:%S')
+def collect_data(run_data):
+    total_ball_count = len(canvas.find_all())
 
-    all_balls = canvas.find_all()
-    total_ball_count = len(all_balls)
+    team_red = canvas.find_withtag("red")  # list of ids
+    total_red_points = 0
+    for red in team_red:
+        total_red_points += ball_objects[red].points
+    team_red_size = len(team_red)
 
-    team_red = len(canvas.find_withtag("red"))
-    team_green = len(canvas.find_withtag("green"))
-    team_blue = len(canvas.find_withtag("blue"))
+    team_green = canvas.find_withtag("green")
+    total_green_points = 0
+    team_green_size = len(team_green)
+    for green in team_green:
+        total_green_points += ball_objects[green].points
 
-    data = {"t": t, "total count": total_ball_count, "red": team_red, "green": team_green, "blue": team_blue}
-    # print(data)
-    t += 1
-    run_data.append(data)
+    team_blue = canvas.find_withtag("blue")
+    total_blue_points = 0
+    team_blue_size = len(team_blue)
+    for blue in team_blue:
+        total_blue_points += ball_objects[blue].points
+    row_of_data = {
+        "total count": total_ball_count,
+        "red": team_red_size, "total red points": total_red_points,
+        "green": team_green_size, "total green points": total_green_points,
+        "blue": team_blue_size, "total blue points": total_blue_points
+        }
+    run_data.append(row_of_data)
+    return team_red_size, team_green_size, team_blue_size
 
-    if (team_red != 0 and team_blue == 0 and team_green == 0) \
-            or (team_red == 0 and team_blue != 0 and team_green == 0) \
-            or (team_red == 0 and team_blue == 0 and team_green != 0):
-        file_name = 'data/' + now + '.csv'
-        with open(file_name, "w") as csvfile:
-            writer = csv.writer(csvfile, delimiter=',')
+
+def collect_data_before(run_data):
+    _, _, _ = collect_data(run_data)
+    root.after(1000, collect_data_before, run_data)
+
+
+def count_survivors(run_data):
+    r, g, b = collect_data(run_data)
+
+    # when only one color left, end the game, but first save the data
+    if (r != 0 and g == 0 and b == 0) or (r == 0 and g != 0 and b != 0) or (r == 0 and g == 0 and b != 0):
+        # saving data to a csv file
+        with open(output_file_name, "w") as fh:
+            writer = csv.writer(fh, delimiter=',')
             for d in run_data:
-                line = d["t"], d["total count"], d["red"], d["green"], d["blue"]
+                line = d["total count"], \
+                       d["red"], d["total red points"], \
+                       d["green"], d["total green points"], \
+                       d["blue"], d["total blue points"]
                 writer.writerow(line)
         exit()
-    root.after(1000, count_survivors, t, run_data)
+    root.after(1000, count_survivors, run_data)
 
 
 # Main script ===========================================================================
 root = Tk()
-root.title('Red-Green-Blue')
+root.title('Red-Green-Blue Game')
 root.configure(background="gray")
 root.resizable(False, False)
 label = Label(text="", width=20, pady=5)
@@ -181,16 +223,13 @@ label.pack(side=TOP)
 canvas = Canvas(root, bg='white', width=500, height=500)
 canvas.pack(side=BOTTOM, padx=5, pady=5)
 
-# update_clock()
-update_label()
-
+update_time_label()
 
 for n in range(NUM_OF_BALLS):
-    b = Ball(canvas, size=BALL_SIZE)
+    b = Ball(canvas, ball_objects, size=BALL_SIZE)
     b.move_ball()
 
-t = 1
-run_data = []
-count_survivors(t, run_data)
+collect_data_before(run_data)
+count_survivors(run_data)
 
 root.mainloop()
