@@ -29,6 +29,7 @@ class Ball:
         self.y1 = randint(50, 450)
         self.x2 = self.x1 + self.ball_size
         self.y2 = self.y1 + self.ball_size
+
         # randomize ball color
         color = randint(1, 3)
         if color == 1:
@@ -215,7 +216,8 @@ def count_survivors(run_data):
 
         # saving data to a csv file
         with open(output_file_name, "w") as fh:
-            fieldnames = ["total count", "red", "total red points", "green", "total green points", "blue", "total blue points"]
+            fieldnames = ["total count", "red", "total red points", "green",
+                          "total green points", "blue", "total blue points"]
             writer = csv.DictWriter(fh, fieldnames=fieldnames)
             writer.writeheader()
             for d in run_data:
@@ -224,7 +226,7 @@ def count_survivors(run_data):
     root.after(1000, count_survivors, run_data)
 
 
-# game UI starts here ===========================================================================
+# ============================== game UI starts here =============================================
 root = Tk()
 root.title('Red-Green-Blue Game')
 root.configure(background="gray")
@@ -285,6 +287,7 @@ empty_label2.pack()
 # --------------------- end of UI ---------------------------------
 
 update_time_label()
+
 # create all balls and start moving them
 for n in range(NUM_OF_BALLS):
     b = Ball(canvas, ball_objects, size=BALL_SIZE)
@@ -292,7 +295,5 @@ for n in range(NUM_OF_BALLS):
 
 collect_data_before(run_data)
 count_survivors(run_data)
-
-# time_label.configure(bg="red")
 
 root.mainloop()
