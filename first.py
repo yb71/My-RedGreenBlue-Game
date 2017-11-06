@@ -202,13 +202,11 @@ def count_survivors(run_data):
     if (r != 0 and g == 0 and b == 0) or (r == 0 and g != 0 and b != 0) or (r == 0 and g == 0 and b != 0):
         # saving data to a csv file
         with open(output_file_name, "w") as fh:
-            writer = csv.writer(fh, delimiter=',')
+            fieldnames = ["total count", "red", "total red points", "green", "total green points", "blue", "total blue points"]
+            writer = csv.DictWriter(fh, fieldnames=fieldnames)
+            writer.writeheader()
             for d in run_data:
-                line = d["total count"], \
-                       d["red"], d["total red points"], \
-                       d["green"], d["total green points"], \
-                       d["blue"], d["total blue points"]
-                writer.writerow(line)
+                writer.writerow(d)
         exit()
     root.after(1000, count_survivors, run_data)
 
@@ -218,13 +216,28 @@ root = Tk()
 root.title('Red-Green-Blue Game')
 root.configure(background="gray")
 root.resizable(False, False)
-label = Label(text="", width=20, pady=5)
+
+top_frame = Frame(root, bg="gray")
+top_frame.pack(side=TOP)
+label = Label(top_frame, text="", width=20, pady=5)
 label.pack(side=TOP)
-canvas = Canvas(root, bg='white', width=500, height=500)
+canvas = Canvas(top_frame, bg='white', width=500, height=500)
 canvas.pack(side=BOTTOM, padx=5, pady=5)
+bottom_frame = Frame(root, bg="gray")
+bottom_frame.pack(side=BOTTOM)
+lb_red = Label(bottom_frame, text="red", width=10, pady=5, padx=10)
+lb_red.pack(side=LEFT)
+empty1 = Label(bottom_frame, bg="gray", text="", width=5)
+empty1.pack(side=LEFT)
+lb_green = Label(bottom_frame, text="green", width=10, pady=5, padx=10)
+lb_green.pack(side=LEFT)
+empty2 = Label(bottom_frame, bg="gray", text="", width=5)
+empty2.pack(side=LEFT)
+lb_blue = Label(bottom_frame, text="blue", width=10, pady=5, padx=10)
+lb_blue.pack(side=LEFT)
 
 update_time_label()
-
+# create all balls and start moving them
 for n in range(NUM_OF_BALLS):
     b = Ball(canvas, ball_objects, size=BALL_SIZE)
     b.move_ball()
