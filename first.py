@@ -9,7 +9,7 @@ NUM_OF_BALLS = 100
 BALL_SIZE = 10
 START_TIME = time.time()
 now = time.strftime('%b%d_%Y_%H:%M:%S')
-output_file_name = 'data/' + now + '.csv'
+output_file_name = now + '.csv'
 run_data = []
 ball_objects = {}
 
@@ -157,6 +157,9 @@ def update_time_label():
     hrs, mins = divmod(mins, 60)
     label_text = '{} : {} : {}'.format(hrs, mins, secs)
     time_label.configure(text=label_text)
+    if secs * 1000 == WAIT_TIME:
+        status_label.configure(text="<< PLAY >>")
+
     root.after(1000, update_time_label)
 
 
@@ -208,7 +211,8 @@ def count_survivors(run_data):
     r, g, b = collect_data(run_data)
 
     # when only one color left, end the game, but first save the data
-    if (r != 0 and g == 0 and b == 0) or (r == 0 and g != 0 and b != 0) or (r == 0 and g == 0 and b != 0):
+    if (r != 0 and g == 0 and b == 0) or (r == 0 and g != 0 and b == 0) or (r == 0 and g == 0 and b != 0):
+
         # saving data to a csv file
         with open(output_file_name, "w") as fh:
             fieldnames = ["total count", "red", "total red points", "green", "total green points", "blue", "total blue points"]
@@ -220,7 +224,7 @@ def count_survivors(run_data):
     root.after(1000, count_survivors, run_data)
 
 
-# Main script ===========================================================================
+# game UI starts here ===========================================================================
 root = Tk()
 root.title('Red-Green-Blue Game')
 root.configure(background="gray")
@@ -228,14 +232,19 @@ root.resizable(False, False)
 
 top_frame = Frame(root, bg="gray")
 top_frame.pack(side=TOP)
-time_label = Label(top_frame, text="", width=20, pady=5)
-time_label.pack(side=TOP)
+
+inner_frame = Frame(top_frame, bg="gray")
+inner_frame.pack()
+status_label = Label(inner_frame, text="<< grow >>", width=10, pady=5, padx=10)
+status_label.pack(side=LEFT)
+time_label = Label(inner_frame, text="", width=10, pady=5, padx=10)
+time_label.pack(side=LEFT)
+
 canvas = Canvas(top_frame, bg='white', width=500, height=500)
 canvas.pack(side=BOTTOM, padx=5, pady=5)
 
 counts_frame = Frame(root, bg="gray")
 counts_frame.pack()
-
 l1 = Label(counts_frame, bg="gray", text="Red:", width=5)
 l1.pack(side=LEFT)
 lb_red = Label(counts_frame, text="red", width=10, pady=5, padx=10)
@@ -256,7 +265,6 @@ empty_label1.pack()
 
 points_frame = Frame(root, bg="gray")
 points_frame.pack()
-
 l1 = Label(points_frame, bg="gray", text="points", width=5)
 l1.pack(side=LEFT)
 lb_red_points = Label(points_frame, text="red", width=10, pady=5, padx=10)
@@ -274,6 +282,7 @@ emty_frame2 = Frame(root, bg="gray")
 emty_frame2.pack(side=BOTTOM)
 empty_label2 = Label(emty_frame2, bg="gray", text="", width=5)
 empty_label2.pack()
+# --------------------- end of UI ---------------------------------
 
 update_time_label()
 # create all balls and start moving them
@@ -283,5 +292,7 @@ for n in range(NUM_OF_BALLS):
 
 collect_data_before(run_data)
 count_survivors(run_data)
+
+# time_label.configure(bg="red")
 
 root.mainloop()
