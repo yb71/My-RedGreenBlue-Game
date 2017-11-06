@@ -156,7 +156,7 @@ def update_time_label():
     mins, secs = divmod(secs, 60)
     hrs, mins = divmod(mins, 60)
     label_text = '{} : {} : {}'.format(hrs, mins, secs)
-    label.configure(text=label_text)
+    time_label.configure(text=label_text)
     root.after(1000, update_time_label)
 
 
@@ -187,6 +187,15 @@ def collect_data(run_data):
         "blue": team_blue_size, "total blue points": total_blue_points
         }
     run_data.append(row_of_data)
+
+    # update labels
+    lb_red.configure(text=team_red_size)
+    lb_red_points.configure(text=total_red_points)
+    lb_green.configure(text=team_green_size)
+    lb_green_points.configure(text=total_green_points)
+    lb_blue.configure(text=team_blue_size)
+    lb_blue_points.configure(text=total_blue_points)
+
     return team_red_size, team_green_size, team_blue_size
 
 
@@ -219,22 +228,52 @@ root.resizable(False, False)
 
 top_frame = Frame(root, bg="gray")
 top_frame.pack(side=TOP)
-label = Label(top_frame, text="", width=20, pady=5)
-label.pack(side=TOP)
+time_label = Label(top_frame, text="", width=20, pady=5)
+time_label.pack(side=TOP)
 canvas = Canvas(top_frame, bg='white', width=500, height=500)
 canvas.pack(side=BOTTOM, padx=5, pady=5)
-bottom_frame = Frame(root, bg="gray")
-bottom_frame.pack(side=BOTTOM)
-lb_red = Label(bottom_frame, text="red", width=10, pady=5, padx=10)
+
+counts_frame = Frame(root, bg="gray")
+counts_frame.pack()
+
+l1 = Label(counts_frame, bg="gray", text="Red:", width=5)
+l1.pack(side=LEFT)
+lb_red = Label(counts_frame, text="red", width=10, pady=5, padx=10)
 lb_red.pack(side=LEFT)
-empty1 = Label(bottom_frame, bg="gray", text="", width=5)
-empty1.pack(side=LEFT)
-lb_green = Label(bottom_frame, text="green", width=10, pady=5, padx=10)
+l2 = Label(counts_frame, bg="gray", text="Green:", width=5)
+l2.pack(side=LEFT)
+lb_green = Label(counts_frame, text="green", width=10, pady=5, padx=10)
 lb_green.pack(side=LEFT)
-empty2 = Label(bottom_frame, bg="gray", text="", width=5)
-empty2.pack(side=LEFT)
-lb_blue = Label(bottom_frame, text="blue", width=10, pady=5, padx=10)
+l3 = Label(counts_frame, bg="gray", text="Blue:", width=5)
+l3.pack(side=LEFT)
+lb_blue = Label(counts_frame, text="blue", width=10, pady=5, padx=10)
 lb_blue.pack(side=LEFT)
+
+emty_frame1 = Frame(root, bg="gray")
+emty_frame1.pack()
+empty_label1 = Label(emty_frame1, bg="gray", text="", width=5)
+empty_label1.pack()
+
+points_frame = Frame(root, bg="gray")
+points_frame.pack()
+
+l1 = Label(points_frame, bg="gray", text="points", width=5)
+l1.pack(side=LEFT)
+lb_red_points = Label(points_frame, text="red", width=10, pady=5, padx=10)
+lb_red_points.pack(side=LEFT)
+l2 = Label(points_frame, bg="gray", text="points", width=5)
+l2.pack(side=LEFT)
+lb_green_points = Label(points_frame, text="green", width=10, pady=5, padx=10)
+lb_green_points.pack(side=LEFT)
+l3 = Label(points_frame, bg="gray", text="points", width=5)
+l3.pack(side=LEFT)
+lb_blue_points = Label(points_frame, text="blue", width=10, pady=5, padx=10)
+lb_blue_points.pack(side=LEFT)
+
+emty_frame2 = Frame(root, bg="gray")
+emty_frame2.pack(side=BOTTOM)
+empty_label2 = Label(emty_frame2, bg="gray", text="", width=5)
+empty_label2.pack()
 
 update_time_label()
 # create all balls and start moving them
